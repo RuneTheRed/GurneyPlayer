@@ -34,7 +34,7 @@ void sendCmd(unsigned char *inputCommands, unsigned len) {
   }
 }
 
-void setLed(boolian state) {
+void setLed(boolean state) {
 //accepts a boolean value for turning on and off the status LED
  if(state == 0) {
   digitalWrite(ledPin, LOW);
@@ -120,10 +120,10 @@ void loop(){
     }
     if (lastButtonState == HIGH && buttonState == LOW){
       playNext();
-      setLed(1);
+      setLed(true);
     }
     else {
-     setLed(0); 
+     setLed(false); 
     }
   }
 }
