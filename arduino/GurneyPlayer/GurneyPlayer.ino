@@ -1,12 +1,15 @@
 //Controller for Arduino with Elechouse MP3 shield 
 /* ======================= 
-Desired Behavior:
+Behavior:
 On power, software serial connection is made with MP3 Shield.
 Upon the establishment of serial connection, a configuration is
 sent to the shield to play only 1 file at a time.
 
-When a button is pressed (sending a HIGH to pin 2) the next MP3
+When a button is pressed (sending a HIGH to pin 2 from LOW) the next MP3
 file is played.
+
+When a file is playing, an LED (pin 3) is illuminated.
+When a file is not playing, the LED pulses.
 ========================*/
 
 //INCLUDES
@@ -29,7 +32,6 @@ long playStatusDelay = 500;
 int ledFrequency = 0;
 boolean playerConnected = false;
 boolean brightnessUp = true;
-boolean readOnce = false;
 boolean pulseMode = false;
 
 //software serial setup
@@ -122,11 +124,10 @@ void playNext() {
   sendCmd(commandBuffer, 4);
 }
 
-unsigned char getPlayState() {
-  unsigned char readValue;
-  boolean returnValue = -1;
-  if(readOnce == false) {
-    //readOnce = true;
+int getPlayState() {
+  if(playerConnected==true) {
+    unsigned char readValue;
+    boolean returnValue = -1;
     commandBuffer[0] = 0x7E;
     commandBuffer[1] = 0x02;
     commandBuffer[2] = 0xC2;
@@ -136,22 +137,20 @@ unsigned char getPlayState() {
     if(mySerial.available()){
       while(mySerial.available()>0){
         readValue = mySerial.read();
-        //Serial.write(mySerial.available());
-        Serial.print(readValue);
         if(readValue == 2) {
-          Serial.write("\nstopped");
           returnValue = 0;
         }
         else if(readValue == 1) {
-         Serial.write("\nplaying"); 
          returnValue = 1;
         }
-        Serial.write("\n");
       }
-      Serial.write("done\n");
      }
     }
     return returnValue;
+  }
+  else {
+   return -1;
+  }
 }
 
 //END FUNCTIONS
@@ -159,11 +158,11 @@ unsigned char getPlayState() {
 void setup(){ 
   delay(1000);
   mySerial.begin(9600);
-  Serial.begin(9600);
   pinMode(buttonPin, INPUT);
   pinMode(ledPin, OUTPUT);
 }
 void loop(){
+  //Check to see if MP3 Shield serial is ready and perform setup instructions once
   if(playerConnected == false && mySerial.isListening()) {
    playerConnected = true;
    setPlayMode();
@@ -172,43 +171,38 @@ void loop(){
    delay(1000);
    stopPlaying();
   }
-  int reading = digitalRead(buttonPin);
   
+  //read button code
+  int reading = digitalRead(buttonPin);
   if(buttonState != lastButtonState) {
    lastDebounceTime = millis(); 
    lastButtonState = buttonState;
   }
-  
+  //debounce code
   if((millis()-lastDebounceTime)>debounceDelay) {
     if(buttonState!=reading){
       buttonState = reading;
     }
     if (lastButtonState == HIGH && buttonState == LOW){
       playNext();
-      //setLed(true);
-    }
-    else {
-     //setLed(false); 
     }
   }
-  
+  //read playstate from MP3 Shield and illuminate button code
   if(millis()-lastPlayStatusTime>playStatusDelay) {
     lastPlayStatusTime = millis();
     int playState = getPlayState();
     if(playState == 1) {
       pulseMode = true;
     }
-    else if(playState == 0) {
+    else {
       pulseMode = false;
     }
-    Serial.write("pulseMode = "+pulseMode);
   }
   
   if(pulseMode == true) {
    setLed(true);
   }
   else {
-    
     pulseLed(); 
   }
   
