@@ -125,9 +125,9 @@ void playNext() {
 }
 
 int getPlayState() {
+  int returnValue = -1;
   if(playerConnected==true) {
     unsigned char readValue;
-    boolean returnValue = -1;
     commandBuffer[0] = 0x7E;
     commandBuffer[1] = 0x02;
     commandBuffer[2] = 0xC2;
@@ -145,12 +145,8 @@ int getPlayState() {
         }
       }
      }
-    }
-    return returnValue;
-  }
-  else {
-   return -1;
-  }
+  }    
+  return returnValue;
 }
 
 //END FUNCTIONS
